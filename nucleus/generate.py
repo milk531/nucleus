@@ -56,9 +56,15 @@ def validate_config(config: dict):
         config["threads_per_process"] = 1
     if "max_concurrency" not in config:
         config["max_concurrency"] = 0
-
     if "dependencies" not in config:
         config["dependencies"] = {}
+
+    if "system_packages" not in config:
+        config["system_packages"] = []
+    
+    if "run" not in config:
+        config["run"] = []
+
     if "pip" not in config["dependencies"]:
         config["dependencies"]["pip"] = "requirements.txt"
     if "conda" not in config["dependencies"]:
@@ -200,11 +206,13 @@ def build_handler_dockerfile(config: dict, path_to_config: str, dev_env: bool) -
         cortex_image_type = "tensorflow-handler"
 
     tfs_container_dns = "" if "tfs_container_dns" not in config else config["tfs_container_dns"]
+    system_packages_str = " \\\n".join(config["system_packages"])
     substitute_envs = {
         "BASE_IMAGE": base_image,
         "PYTHON_VERSION": config["py_version"],
         "CORTEX_IMAGE_TYPE": cortex_image_type,
         "CORTEX_TF_SERVING_HOST": tfs_container_dns,
+        "SYSTEM_PACKAGES": f"{system_packages_str} \\",
     }
     for env, val in substitute_envs.items():
         env_var = f"${env}"
@@ -309,8 +317,15 @@ def build_handler_dockerfile(config: dict, path_to_config: str, dev_env: bool) -
             '    if [ -f "/src/project/${CORTEX_DEPENDENCIES_PIP}" ]; then pip --no-cache-dir install -r "/src/project/${CORTEX_DEPENDENCIES_PIP}"; fi && \\',
         ]
 
+    
     handler_lines += [
         "    /usr/local/cortex/install-core-dependencies.sh",
+        "",
+    ]
+
+    handler_lines += [f"RUN {run_line}" for run_line in config['run']]
+
+    handler_lines += [
         "",
         f"COPY {project_dir}/ /src/project/",
         f"RUN mv /tmp/{config_filename} /src/project/{config_filename}",

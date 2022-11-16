@@ -11,7 +11,8 @@ RUN apt-get update -qq && apt-get install -y -q \
         unzip \
         zlib1g-dev \
         locales \
-        nginx=1.14.* \
+        nginx=1.14.* \ 
+        $SYSTEM_PACKAGES
     && apt-get clean -qq && rm -rf /var/lib/apt/lists/*
 
 RUN cd /tmp/ && \
