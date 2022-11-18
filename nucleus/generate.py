@@ -65,6 +65,9 @@ def validate_config(config: dict):
     if "run" not in config:
         config["run"] = []
 
+    if "env" not in config:
+        config["env"] = {}
+
     if "pip" not in config["dependencies"]:
         config["dependencies"]["pip"] = "requirements.txt"
     if "conda" not in config["dependencies"]:
@@ -324,6 +327,8 @@ def build_handler_dockerfile(config: dict, path_to_config: str, dev_env: bool) -
     ]
 
     handler_lines += [f"RUN {run_line}" for run_line in config['run']]
+
+    handler_lines += [f"ENV {ek} {ev}" for ek,ev in config["env"].items()]
 
     handler_lines += [
         "",
