@@ -1,6 +1,6 @@
 # to replace when building the dockerfile
 FROM $BASE_IMAGE
-ENV CORTEX_MODEL_SERVER_VERSION=master
+ENV CORTEX_MODEL_SERVER_VERSION=$CORTEX_MODEL_SERVER_VERSION
 
 RUN apt-get update -qq && apt-get install -y -q \
         build-essential \

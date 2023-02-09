@@ -20,7 +20,8 @@ import pathlib
 
 import yaml
 import click
-
+import nucleus
+from getversion import get_module_version
 
 class CortexModelServerBuilder(RuntimeError):
     pass
@@ -214,8 +215,10 @@ def build_handler_dockerfile(config: dict, path_to_config: str, dev_env: bool) -
 
     tfs_container_dns = "" if "tfs_container_dns" not in config else config["tfs_container_dns"]
     system_packages_str = " \\\n".join(config["system_packages"])
+    version, _ = get_module_version(nucleus)
     substitute_envs = {
         "BASE_IMAGE": base_image,
+        "CORTEX_MODEL_SERVER_VERSION": version,
         "PYTHON_VERSION": config["py_version"],
         "CORTEX_IMAGE_TYPE": cortex_image_type,
         "CORTEX_TF_SERVING_HOST": tfs_container_dns,
