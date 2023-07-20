@@ -360,7 +360,7 @@ def build_docker_script(config: dict, path_to_config: str, dev_env: bool) -> str
     for env, val in substitute_envs.items():
         env_var = f"${env}"
         script_template = script_template.replace(env_var.encode("utf-8"), val.encode("utf-8"))
-    return script_template
+    return script_template.decode()
 
 
 def build_tensorflow_dockerfile(config: dict, tfs_dockerfile: bytes, dev_env: bool) -> str:
