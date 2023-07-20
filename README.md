@@ -60,6 +60,7 @@ Some of Nucleus's features include:
 <!-- UPDATE THIS VERSION ON EACH RELEASE (it's better than using "master") -->
 
 ```bash
+
 pip install git+https://github.com/milk531/nucleus.git@0.3.0
 ```
 

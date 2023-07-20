@@ -4,8 +4,6 @@ ENV CORTEX_MODEL_SERVER_VERSION=$CORTEX_MODEL_SERVER_VERSION
 
 RUN TZ=`date +%Z` ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-
 RUN apt-get update -qq && apt-get install -y -q \
         build-essential \
         pkg-config \
