@@ -42,6 +42,9 @@ def read_model_server_config(file) -> dict:
 def validate_config(config: dict):
     if config.get("type") not in ["python", "tensorflow"]:
         raise CortexModelServerBuilder("'type' must be set to 'python' or 'tensorflow'")
+    
+    if "name" not in config:
+        raise CortexModelServerBuilder("a service 'name' must be set")
 
     if "py_version" not in config:
         config["py_version"] = "3.6.9"
@@ -193,7 +196,7 @@ def validate_config(config: dict):
 
 def build_handler_dockerfile(config: dict, path_to_config: str, dev_env: bool) -> str:
     handler_template = pkgutil.get_data(__name__, "templates/handler.Dockerfile")
-    base_image = "ubuntu:18.04"
+    base_image = "ubuntu:20.04"
     cortex_image_type = "python-handler-cpu"
     if os.getenv("CORTEX_TELEMETRY_SENTRY_DSN"):
         cortex_sentry_dsn = os.environ["CORTEX_TELEMETRY_SENTRY_DSN"]
@@ -208,7 +211,7 @@ def build_handler_dockerfile(config: dict, path_to_config: str, dev_env: bool) -
         and config["gpu_version"]["development_image"] not in ["", None]
     ):
         image_type = "devel" if config["gpu_version"]["development_image"] else "runtime"
-        base_image = f"nvidia/cuda:{config['gpu_version']['cuda']}-cudnn{config['gpu_version']['cudnn']}-{image_type}-ubuntu18.04"
+        base_image = f"nvidia/cuda:{config['gpu_version']['cuda']}-cudnn{config['gpu_version']['cudnn']}-{image_type}-ubuntu20.04"
         cortex_image_type = "python-handler-gpu"
     if config["type"] == "tensorflow":
         cortex_image_type = "tensorflow-handler"
@@ -349,6 +352,16 @@ def build_handler_dockerfile(config: dict, path_to_config: str, dev_env: bool) -
     handler_dockerfile = "\n".join(handler_lines)
     return handler_dockerfile
 
+def build_docker_script(config: dict, path_to_config: str, dev_env: bool) -> str:
+    script_template = pkgutil.get_data(__name__, "templates/build_and_push.sh")
+    substitute_envs = {
+        "TARGET_IMAGE": config['name'],
+    }
+    for env, val in substitute_envs.items():
+        env_var = f"${env}"
+        script_template = script_template.replace(env_var.encode("utf-8"), val.encode("utf-8"))
+    return script_template
+
 
 def build_tensorflow_dockerfile(config: dict, tfs_dockerfile: bytes, dev_env: bool) -> str:
     if config["gpu"]:
@@ -422,6 +435,7 @@ def build_dockerfile_images(config: dict, path_to_config: str) -> List[str]:
 
     nucleus_file = "nucleus.Dockerfile"
     nucleus_tfs_file = "nucleus-tfs.Dockerfile"
+    docker_script_file = "build_and_push.sh"
 
     click.echo("-------------- nucleus model server config --------------")
     click.echo(yaml.dump(config, indent=2, sort_keys=False))
@@ -435,6 +449,12 @@ def build_dockerfile_images(config: dict, path_to_config: str) -> List[str]:
     with open(nucleus_file, "w") as f:
         f.write(handler_dockerfile)
     click.echo(f"✓ generated {nucleus_file}")
+
+    # 
+    docker_script = build_docker_script(config, path_to_config, is_dev_env)
+    with open(docker_script_file, "w") as f:
+        f.write(docker_script)
+    click.echo(f"✓ generated {docker_script_file}")
 
     # get tfs template
     if config["type"] == "tensorflow":
